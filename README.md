@@ -1,6 +1,10 @@
 # Funding Spread
 ### Real-Time Cryptocurrency Funding Rate Monitor for Android
 
+## Application Preview
+
+![TradingApp Main Screen](screenshots/main-screen.png)
+
 Funding Spread is an Android application designed to monitor funding rate differences across USDT, USDC, and USD1 perpetual futures markets on multiple cryptocurrency exchanges.
 
 The application collects live market data from **MEXC, Binance, OKX, and Bybit**, compares funding rates, and identifies the largest spread between available quote currencies for a selected cryptocurrency.
