@@ -1,135 +1,188 @@
-# Funding Spread — Android
+# Funding Spread
+### Real-Time Cryptocurrency Funding Rate Monitor for Android
 
-Watch the funding-rate gap between a coin's **USDT / USDC / USD1** perpetuals on
-**MEXC, Binance, OKX and Bybit**.
+Funding Spread is an Android application designed to monitor funding rate differences across USDT, USDC, and USD1 perpetual futures markets on multiple cryptocurrency exchanges.
 
-You type a base coin (`BTC`, not `BTCUSDT`). The app finds every quote variant of
-it that the selected exchange actually lists, shows each one's current funding
-rate and its own countdown, and headlines the **largest absolute gap** between
-any two of them. With three quotes present all three pairs are compared
-(USDT/USDC, USDT/USD1, USDC/USD1) and the widest wins. Everything refreshes
-every 10 seconds; countdowns tick every second.
+The application collects live market data from **MEXC, Binance, OKX, and Bybit**, compares funding rates, and identifies the largest spread between available quote currencies for a selected cryptocurrency.
 
----
+The goal is to make funding rate discrepancies easier to observe through a single interface with continuously updated market data.
 
-## Build it
+## Key Features
 
-**With Android Studio (easiest)**
+- **Multi-Exchange Support:** Fetches funding rate data from MEXC, Binance, OKX, and Bybit.
+- **Multi-Quote Comparison:** Compares USDT, USDC, and USD1 perpetual contracts.
+- **Automatic Spread Detection:** Identifies the largest absolute funding rate difference between available quote pairs.
+- **Real-Time Updates:** Refreshes market data every 10 seconds.
+- **Live Settlement Countdown:** Updates funding settlement countdowns every second.
+- **Exchange Clock Synchronization:** Uses exchange server timestamps to improve countdown accuracy.
+- **Funding Interval Awareness:** Displays individual funding intervals and flags mismatched settlement schedules.
+- **Dynamic Market Discovery:** Reads exchange instrument metadata instead of assuming contract symbols.
+- **Error Handling:** Displays missing data and exchange errors instead of silently presenting stale or misleading values.
 
-1. Android Studio → *Open* → pick this `android` folder.
-2. Wait for the Gradle sync (first run downloads Gradle and the AndroidX
-   libraries — a few minutes and about 1.5 GB).
-3. Plug the phone in with USB debugging on, then press **Run ▶**.
+## Supported Exchanges
 
-**From the command line**
+| Exchange | Supported Markets | Data Source |
+|---|---|---|
+| MEXC | USDT / USDC / USD1 | Public Contract API |
+| Binance | USDT / USDC / USD1 | Public Futures API |
+| OKX | USDT | Public Swap API |
+| Bybit | USDT / USDC / USD1 | Public Linear API |
+
+Market availability depends on each exchange's actual listings. The application discovers available instruments dynamically.
+
+## How It Works
+
+1. The user enters a base cryptocurrency symbol, such as `BTC`.
+2. The application retrieves available perpetual instruments from the selected exchange.
+3. Available USDT, USDC, and USD1 contracts are identified using exchange-provided instrument metadata.
+4. Current funding rates and settlement times are collected.
+5. The application compares all available quote-currency pairs.
+6. The pair with the largest absolute funding rate difference is displayed.
+
+When three quote currencies are available, the application evaluates all three possible combinations:
+
+- USDT / USDC
+- USDT / USD1
+- USDC / USD1
+
+The application also accounts for differences in funding intervals and exchange server times.
+
+## Technical Architecture
+
+The application is developed natively for Android using Kotlin.
+
+| Component | Technology |
+|---|---|
+| Platform | Android |
+| Programming Language | Kotlin |
+| Build System | Gradle |
+| Build Configuration | Kotlin DSL |
+| Market Data | Public Exchange REST APIs |
+| Minimum Android Version | Android 8.0 (API 26) |
+| Target Android Version | API 35 |
+
+### Project Structure
+
+```text
+app/
+ └── src/
+     ├── main/
+     │   ├── java/com/fundingspread/app/
+     │   │   ├── Exchanges.kt
+     │   │   ├── Http.kt
+     │   │   ├── MainActivity.kt
+     │   │   ├── MainViewModel.kt
+     │   │   └── Model.kt
+     │   ├── res/
+     │   └── AndroidManifest.xml
+     └── test/
+```
+
+### Core Components
+
+- **Exchanges.kt:** Handles exchange-specific market data retrieval and instrument discovery.
+- **Http.kt:** Provides HTTP communication functionality.
+- **MainActivity.kt:** Contains the application's user interface.
+- **MainViewModel.kt:** Manages application state, periodic updates, and watchlist behavior.
+- **Model.kt:** Defines market data models and funding spread calculations.
+
+## Accuracy and Data Handling
+
+Several implementation details are important for reliable market comparisons:
+
+**Instrument Resolution**
+
+Trading symbols are resolved using exchange-provided instrument metadata rather than simple string concatenation. This avoids incorrect market identification, particularly when exchanges use different naming conventions.
+
+**Funding Countdown Synchronization**
+
+The application calculates the difference between exchange server time and device time. This offset is used to keep settlement countdowns aligned with exchange timestamps.
+
+**Funding Interval Differences**
+
+Funding intervals are displayed individually. When two contracts have different settlement schedules, the application flags the mismatch so users can distinguish between comparable and non-comparable funding periods.
+
+**Missing Data Handling**
+
+Unavailable funding rates are not converted into artificial zero values. Failed requests and missing market data are explicitly represented in the interface.
+
+## Building the Project
+
+### Requirements
+
+- Android Studio
+- JDK 17 or newer
+- Android SDK API 35
+- Internet connection
+
+### Run with Android Studio
+
+1. Clone this repository.
+2. Open the `android` project directory in Android Studio.
+3. Wait for Gradle synchronization.
+4. Connect an Android device with USB debugging enabled.
+5. Run the application.
+
+### Build from the Command Line
 
 ```bash
 ./gradlew assembleDebug
-# app/build/outputs/apk/debug/app-debug.apk
 ```
 
-Copy that APK to the phone and open it (allow "install from unknown sources").
-Needs a JDK 17+ and `ANDROID_HOME` pointing at an SDK with API 35.
+The generated APK will be available at:
 
-Run the off-device checks:
+```text
+app/build/outputs/apk/debug/app-debug.apk
+```
+
+### Run Unit Tests
 
 ```bash
 ./gradlew :app:testDebugUnitTest
 ```
 
-Requirements: minSdk 26 (Android 8.0), targetSdk 35, Kotlin 2.0.21, AGP 8.7.3.
-Only permission used is `INTERNET`. No account, no API key — every endpoint is
-public market data.
+## Testing and Verification
+
+The project includes unit tests covering the core funding spread and market data parsing logic.
+
+The existing test suite contains 12 test cases covering:
+
+- Funding rate comparison across three quote currencies.
+- Selection of the largest available spread.
+- Exchange-specific instrument resolution.
+- Bybit instrument pagination.
+- Contract filtering.
+- Funding interval differences.
+- Exchange server clock synchronization.
+- Missing funding rate handling.
+- Locale-sensitive number formatting.
+
+**Testing limitations:** The Compose UI layer has not been verified. Live Binance and Bybit responses have not been independently verified in the development environment; their parsers were tested against payloads based on the official API documentation. MEXC and OKX responses were captured live.
+
+## Current Limitations
+
+OKX currently provides limited quote-currency coverage for this application's comparison model. Its supported USDT perpetual markets can be monitored, but unavailable USDC and USD1 perpetual instruments cannot produce a funding spread.
+
+The application reads available instruments dynamically, so newly listed markets can be discovered without hardcoding their symbols.
+
+## Future Improvements
+
+Potential future developments include:
+
+- Configurable funding spread alerts.
+- Android push notifications.
+- Historical funding spread charts.
+- Spread-based market sorting.
+- Additional exchange integrations.
+- Cross-exchange funding rate comparisons.
+
+## Security and Permissions
+
+- Uses public exchange market data endpoints.
+- Does not require user registration.
+- Does not require private exchange API credentials.
+- Requires internet access to retrieve market data.
 
 ---
 
-## How the numbers are produced
-
-Getting these values *right* was the point, so the rules are explicit.
-
-**Symbols are never built from strings.** Each exchange's instruments endpoint is
-read and contracts are matched on the exchange's own `baseCoin`/`quoteCoin`
-metadata. This matters: Bybit's USDC perpetual for BTC is called **`BTCPERP`**,
-not `BTCUSDC`. Concatenating `base + quote` would silently request a market that
-doesn't exist — or worse, a different one. The instrument list is cached for 30
-minutes and re-read immediately when you add a coin it hasn't seen.
-
-**Countdowns run on the exchange's clock, not the phone's.** Every response
-carries a server timestamp (`time`, `timestamp`, `ts`). The app measures
-`server − device` on each poll and applies that offset, so a phone with a drifting
-clock still shows the correct time to settlement.
-
-**Funding intervals are shown, and mismatches are flagged.** A 0.01% gap between a
-4h contract and an 8h contract is not the same trade as the same gap between two
-8h contracts. Each leg shows its own interval and the card warns when they
-differ. The headline number stays the raw absolute difference.
-
-**Nothing is guessed.** A leg whose rate failed to load shows `—`; a coin with
-only one quote shows no gap and says why. A failed exchange call surfaces an
-error banner rather than silently reusing stale numbers as if they were fresh.
-
-### Endpoints
-
-| Exchange | Instruments | Rates | Notes |
-|---|---|---|---|
-| MEXC | `/api/v1/contract/detail` | `/api/v1/contract/funding_rate` | One call covers every contract. `collectCycle` is the interval in hours. |
-| Binance | `/fapi/v1/exchangeInfo` + `/fapi/v1/fundingInfo` | `/fapi/v1/premiumIndex` | No symbol ⇒ all contracts, weight 10. `fundingInfo` lists only symbols off the 8h default. |
-| OKX | `/api/v5/public/instruments?instType=SWAP` | `/api/v5/public/funding-rate?instId=…` | No batch form, so calls are fanned out 6 at a time to stay under 20 req/2s. Interval derived as `fundingTime − prevFundingTime`. |
-| Bybit | `/v5/market/instruments-info?category=linear` | `/v5/market/tickers?category=linear` | Instruments are paginated via `nextPageCursor`. `fundingInterval` is in minutes. |
-
-The rate shown is in every case the **current rate for the upcoming
-settlement** — the figure the exchange's own ticker displays next to its
-countdown, not the rate that was already charged.
-
----
-
-## Known limitation: OKX
-
-At the time this was built, OKX lists **no USDC or USD1 perpetual swaps** — only
-USDT-quoted ones plus coin-margined `-USD-SWAP` contracts, which are a different
-instrument type and are deliberately excluded. `BTC-USDC-SWAP` and
-`BTC-USD1-SWAP` both return *"Instrument ID … doesn't exist"*. OKX did list
-USDC perpetuals back in 2022 and has since removed them.
-
-So on the OKX tab most coins will show a single leg and no gap. That is the
-exchange's reality, not a bug, and the app says so in a banner rather than
-leaving you guessing. Nothing is hardcoded: instrument lists are read live, so if
-OKX relists USDC or USD1 perpetuals the app picks them up on its own. The same
-holds if MEXC, Binance or Bybit add new quote pairs.
-
----
-
-## What was verified, and what wasn't
-
-Verified — `app/src/test` covers 12 test cases over the parsing and spread layer,
-built on recorded exchange payloads (the OKX block is a verbatim capture of a
-live response):
-
-- all three quotes resolved and paired; the widest of the three pairs wins
-- Bybit `BTCPERP` resolution and cursor pagination
-- delisted, pre-launch, dated-future and coin-margined contracts filtered out
-- per-symbol funding intervals; mismatched schedules flagged
-- server-clock anchoring, and missing rates never turned into a fake zero
-- formatting under a Turkish locale (a decimal comma here would be wrong)
-
-**Not verified:** the Compose UI layer, and live responses from Binance and Bybit
-— the machine this was written on has no route to those two hosts, so their
-parsers were built from the official API reference and tested against payloads
-shaped to it. MEXC and OKX responses were captured live. First run on the phone
-is the real test; if a tab errors, the message names the exchange and the cause.
-
----
-
-## Where to extend
-
-- `Model.kt` — quotes, exchanges, and the spread maths (`Spread.best`). Adding a
-  fourth quote currency is one line in `Quote`.
-- `Exchanges.kt` — one object per exchange behind `ExchangeClient`. A new
-  exchange means one new object plus an entry in `Clients`.
-- `MainViewModel.kt` — polling cadence (`REFRESH_SECONDS`), instrument cache TTL,
-  watchlist persistence.
-- `MainActivity.kt` — the whole UI.
-
-Natural next steps: a threshold alert with a notification, sorting the list by
-gap size, a per-coin history sparkline, or cross-exchange comparison of the same
-contract.
+**Disclaimer:** This application is a market monitoring and analytical tool. Funding rate differences do not guarantee profitable arbitrage opportunities. Trading involves market, execution, liquidity, and funding-related risks.
